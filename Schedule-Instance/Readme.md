@@ -20,45 +20,29 @@ The provided architecture diagram visually shows what we will create and how the
 Step 1: setup your provider
 The first step is to create a file “provider.tf”. Choose the AWS region that you prefer:
 
-provider "aws" {
-  region = "us-east-1"
-
-}
-
-terraform {
-    required_providers {
-        aws = {
-        source  = "hashicorp/aws"
-        version = "~> 5.0"
-        }
-    }
-}
-
-
 Step 2: create your EC2 instances
 Create a file “Ec2-instance.tf” and paste this code:
-resource "aws_instance" "ec2_9_5" {
-  ami = "ami-0facbf2a36e11b9dd" # Amazon Linux 2023 AMI, eu-west-3
-  instance_type = "t2.micro"
-  tags = {
-    Name = "EC2 9to5"
-    WorkingHoursFlag = "True"
-  }
-}
-
-resource "aws_instance" "ec2_24_7" {
-  ami = "ami-0facbf2a36e11b9dd" # Amazon Linux 2023 AMI, eu-west-3
-  instance_type = "t2.micro"
-  tags = {
-    Name = "EC2 24h"
-    WorkingHoursFlag = "False"
-  }
-}
-
-
 Observe that we are defining a tag “WorkingHoursFlag” which is set to True or False, based on the EC2 instance:
-
 the EC2 instance that will be active only from 9 AM to 5 PM will have the tag “WorkingHoursFlag” set to “True”
-the EC2 instance that runs continuously 24/7 will have the tag “WorkingHoursFlag” set to “False”.
 So tags are an efficient way of distinguishing between resources and making them behave differently.
+
+Step 3: setup Lambda Functions
+We will first create the Lambda function which is responsible for starting the EC2 instance. Define a Python script called “lambda_startec2.py” and paste this code:
+As you can see there is a lambda handler and a function “start_ec2_instance()”. Python uses the boto3 library to allow the Lambda function to access the other AWS services, such as EC2. There are two main functions:
+
+- describe_instances() retrieves the EC2 instances that corresponds to a specific tag that we pass in Filters, in our case we are taking those EC2 instances that have the tag “WorkingHoursFlag” set to True. Since we know that we have only 1 EC2 instance that should account for the workday schedule, we take the the first EC2 instance.
+- 
+- start_instances() starts up the EC2 instances whose ID is passed in the corresponding argument of the method.
+
+The code for the other Lambda function is almost the same, so define a file “lambda_stopec2.py” and paste this:
+Then create a file called “lambda.tf” and paste this code:
+For each Lambda function Terraform needs to zip the code and create an archive that will be uploaded by indicating the zipped file as “filename” in “aws_lambda_function”.
+
+Step 4: create IAM roles for Lambda functions
+As you can see we have a field “role” in “aws_lambda_function”. The Lambda functions must have the permissions to invoke the previous methods to retrieve, start and stop EC2 instances, as well as access logs. Create a file “iam.tf”, in which we define the IAM role and attach some policies it.
+Note that we are also defining a data source that allows the “lambda.amazonaws.com” service to assume roles using the “sts:AssumeRole” action.
+
+Step 5: setup Amazon EventBridge Schedulers
+Then define a file “scheduler.tf” in which we configure the schedulers that will trigger the Lambda functions. You can also define CloudWatch Event rules, which is the old approach but it has the same logic.
+Also schedulers have a service role, to which must be attached a policy that permits the action “lambda:InvokeFunction” to be able to trigger the Lambda functions. So add this to “iam.tf”:
 
