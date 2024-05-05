@@ -14,5 +14,7 @@ The functionality for starting and stopping EC2 instances will be written in Pyt
 
 - Amazon EventBridge Schedulers: EventBridge, before known as CloudWatch Event, is AWS’s monitoring and management service. EventBridge Schedulers enable the triggering of automated actions based on predefined schedules or events. In this project, an EventBridge Scheduler will be configured to trigger the Start Instances Lambda at the beginning of the workday and the Stop Instances Lambda at the end of the workday.
 
-The provided architecture diagram visually shows what we will create and how the different components interact. It illustrates the flow of events from EventBridge Schedulers triggering the respective Lambda functions, which then execute the start or stop operations on an EC2 instance. We will create also another EC2 instance that will need to be active 24/7, this is done in order to simulate a real-world scenario in which EC2 instances are managed for different purposes.
+The provided architecture diagram visually shows what we will create and how the different components interact. It illustrates the flow of events from EventBridge Schedulers triggering the respective Lambda functions, which then execute the start or stop operations on an EC2 instance.
+<img width="509" alt="image" src="https://github.com/Piyushchopde/Projects/assets/88358122/e902d1c7-5b32-46b1-aabe-1e6e80ef0e84">
+
 
